@@ -171,6 +171,7 @@ final class Controller: NSObject {
 	private var identity: String?
 	private var shownText: String?
 	private var offset: Double
+	private var drop: CGFloat = CGFloat(ProcessInfo.processInfo.environment["NOTCH_LYRICS_DROP"].flatMap(Double.init) ?? 0)
 
 	private let font = NSFont.systemFont(ofSize: 13, weight: .medium)
 	private let hPadding: CGFloat = 18
@@ -193,7 +194,14 @@ final class Controller: NSObject {
 		window.backgroundColor = .clear
 		window.hasShadow = false          // hardware does not cast one
 		window.ignoresMouseEvents = true  // click-through: never in the way
-		window.level = .statusBar
+		// Deliberately *just above* the status-window band. Vorssaint's notch
+		// treats any window with layer in [statusWindow, statusWindow+1] that is
+		// narrower than the screen and no taller than the menu bar as menu-bar
+		// occupancy — without checking where it sits vertically. A strip at
+		// .statusBar therefore costs it the "safe center" and it hides the
+		// cutout's contents entirely. Two levels up stays above everything here
+		// and leaves its island alone.
+		window.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.statusWindow)) + 2)
 		window.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary, .ignoresCycle]
 		window.alphaValue = 0
 
@@ -241,7 +249,7 @@ final class Controller: NSObject {
 		let width = min(max(measured + hPadding * 2, max(notchWidth(screen), 160)), maxWidth)
 
 		let inset = screen.safeAreaInsets.top
-		let top = screen.frame.maxY - max(inset, NSStatusBar.system.thickness)
+		let top = screen.frame.maxY - max(inset, NSStatusBar.system.thickness) - drop
 
 		window.setFrame(
 			NSRect(x: screen.frame.midX - width / 2, y: top - height, width: width, height: height),
@@ -251,7 +259,7 @@ final class Controller: NSObject {
 		plate.needsDisplay = true
 
 		if ProcessInfo.processInfo.environment["NOTCH_LYRICS_DEBUG"] != nil {
-			print("[layout] measured=\(measured) width=\(width) cap=\(maxWidth) screen=\(screen.frame.width) label=\(label.frame.width) text=\(text.prefix(28))")
+			print("[layout] frame=\(window.frame) inset=\(screen.safeAreaInsets.top) screenTop=\(screen.frame.maxY) text=\(text.prefix(22))")
 			fflush(stdout)
 		}
 	}

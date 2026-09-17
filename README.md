@@ -36,7 +36,8 @@ macOS asks once for permission to control Spotify. Remove it again with
 NotchLyrics --offset -0.4   # shift lyric timing, in seconds
 ```
 
-`NOTCH_LYRICS_DEBUG=1` prints the measured width and text of every layout pass.
+`NOTCH_LYRICS_DEBUG=1` prints the frame and text of every layout pass, and
+`NOTCH_LYRICS_DROP=<points>` shifts the strip further down the screen.
 
 ## Notes
 
@@ -45,6 +46,13 @@ Two things that cost time here, in case they save you some:
 **Measure the field, not the string.** `NSString.size(withAttributes:)` ignores
 the cell insets `NSTextField` draws inside, so a string-derived width is a few
 points short and silently truncates the last word. `label.fittingSize` is right.
+
+**Keep out of the status-window level band.** Vorssaint's notch counts any
+window with layer in `[statusWindow, statusWindow+1]` that is narrower than the
+screen and no taller than the menu bar as menu-bar occupancy — with no check on
+where it actually sits vertically. A strip at `.statusBar` costs it the "safe
+center" and it hides its own album art and audio pill entirely, anywhere on
+screen. Sitting two levels above leaves it alone.
 
 **Don't leave `autoresizingMask` on the label.** The plate resizes on every line
 change, and autoresizing re-derives a label width that truncates the text — even
