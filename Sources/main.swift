@@ -194,14 +194,12 @@ final class Controller: NSObject {
 		window.backgroundColor = .clear
 		window.hasShadow = false          // hardware does not cast one
 		window.ignoresMouseEvents = true  // click-through: never in the way
-		// Deliberately *just above* the status-window band. Vorssaint's notch
-		// treats any window with layer in [statusWindow, statusWindow+1] that is
-		// narrower than the screen and no taller than the menu bar as menu-bar
-		// occupancy — without checking where it sits vertically. A strip at
-		// .statusBar therefore costs it the "safe center" and it hides the
-		// cutout's contents entirely. Two levels up stays above everything here
-		// and leaves its island alone.
-		window.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.statusWindow)) + 2)
+		// Level is switchable so the notch-app interaction can be A/B tested.
+		// Above the status band by default, which was a guess at a conflict with
+		// the notch app that later failed to reproduce — harmless, not a fix.
+		window.level = ProcessInfo.processInfo.environment["NOTCH_LYRICS_LEVEL"] == "status"
+			? .statusBar
+			: NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.statusWindow)) + 2)
 		window.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary, .ignoresCycle]
 		window.alphaValue = 0
 
